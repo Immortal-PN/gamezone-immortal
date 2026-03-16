@@ -7,7 +7,18 @@ from core.models import GalleryImage, Game, Genre, Platform
 class Command(BaseCommand):
     help = "Seed GameZone with premium demo content."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--if-empty",
+            action="store_true",
+            help="Only seed demo content when no games exist yet.",
+        )
+
     def handle(self, *args, **options):
+        if options["if_empty"] and Game.objects.exists():
+            self.stdout.write("Skipping demo seed because games already exist.")
+            return
+
         genre_data = [
             ("Action", "#FF6B2C", "bolt"),
             ("Racing", "#47D7AC", "track"),
