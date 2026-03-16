@@ -1,5 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
+
+from django.db import OperationalError
 
 from .models import Game, Genre, Platform
 
@@ -44,3 +47,9 @@ class CoreViewsTest(TestCase):
         response = self.client.get(reverse("game-detail", kwargs={"slug": "neon-rift"}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Pulse Forge")
+
+    @patch("core.views.Game.objects.count", side_effect=OperationalError("db not ready"))
+    def test_home_page_handles_database_startup_error(self, _mock_count):
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Database setup is not complete yet")

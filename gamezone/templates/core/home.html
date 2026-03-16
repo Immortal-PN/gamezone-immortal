@@ -3,6 +3,13 @@
 {% block title %}GameZone | Home{% endblock %}
 
 {% block content %}
+{% if not database_ready %}
+<section class="glass-card empty-card">
+    <h3>Database setup is not complete yet</h3>
+    <p>Run `python manage.py migrate` first, then reload the app. If you want demo content, run `python manage.py seed_gamezone` after migrations finish.</p>
+</section>
+{% endif %}
+
 <section class="hero-panel">
     {% if featured_game %}
         <div class="hero-media" style="background-image: linear-gradient(135deg, rgba(9, 12, 28, 0.18), rgba(9, 12, 28, 0.88)), url('{{ featured_game.banner_url }}');"></div>

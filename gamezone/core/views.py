@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
+from django.db import OperationalError, ProgrammingError
 from django.db.models import Avg, Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,21 +13,38 @@ from .models import Game, Genre, Platform, Review, Wishlist
 
 
 def home(request):
-    games = (
-        Game.objects.prefetch_related("genres", "platforms")
-        .annotate(review_average=Avg("reviews__score"), review_count=Count("reviews"))
-    )
-    featured_game = games.filter(is_featured=True).first() or games.first()
     context = {
-        "featured_game": featured_game,
-        "trending_games": games.filter(is_trending=True)[:4],
-        "new_releases": games.filter(is_new_release=True)[:4],
-        "editors_picks": games.filter(is_editors_pick=True)[:3],
-        "genres": Genre.objects.annotate(game_count=Count("games"))[:6],
-        "total_games": Game.objects.count(),
-        "total_reviews": Review.objects.count(),
-        "total_platforms": Platform.objects.count(),
+        "featured_game": None,
+        "trending_games": [],
+        "new_releases": [],
+        "editors_picks": [],
+        "genres": [],
+        "total_games": 0,
+        "total_reviews": 0,
+        "total_platforms": 0,
+        "database_ready": True,
     }
+
+    try:
+        games = (
+            Game.objects.prefetch_related("genres", "platforms")
+            .annotate(review_average=Avg("reviews__score"), review_count=Count("reviews"))
+        )
+        context.update(
+            {
+                "featured_game": games.filter(is_featured=True).first() or games.first(),
+                "trending_games": games.filter(is_trending=True)[:4],
+                "new_releases": games.filter(is_new_release=True)[:4],
+                "editors_picks": games.filter(is_editors_pick=True)[:3],
+                "genres": Genre.objects.annotate(game_count=Count("games"))[:6],
+                "total_games": Game.objects.count(),
+                "total_reviews": Review.objects.count(),
+                "total_platforms": Platform.objects.count(),
+            }
+        )
+    except (OperationalError, ProgrammingError):
+        context["database_ready"] = False
+
     return render(request, "core/home.html", context)
 
 
