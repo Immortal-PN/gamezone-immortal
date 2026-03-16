@@ -1,1 +1,1 @@
-web: cd gamezone && python manage.py migrate && gunicorn gamezone.wsgi --log-file -
+web: cd gamezone && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn gamezone.wsgi --log-file -
